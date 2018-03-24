@@ -110,6 +110,8 @@ validate_main ( ValidateOpts& opt )
 		<< cdbg.get_bitvector().bit_size() / cdbg.get_num_samples() <<
 		" equivalence classes." << std::endl;
 
+	uint64_t kmer_size = cdbg.get_cqf()->keybits() / 2;
+
 	// Read query k-mers.
 	std::cout << "Reading query kmers from disk." << std::endl;
 	uint32_t seed = 2038074743;
@@ -117,6 +119,7 @@ validate_main ( ValidateOpts& opt )
   mantis::QuerySets multi_kmers = Kmer::parse_kmers(opt.query_file.c_str(),
                                                     seed,
                                                     cdbg.range(),
+																										kmer_size,
                                                     num_kmers);
 
 
