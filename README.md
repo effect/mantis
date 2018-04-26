@@ -127,15 +127,7 @@ OPTIONS
   Rather than writing the results in the "simple" output format, they can be written in JSON if you
  provide the `--json,-j` flag to the `query` command.
 
- The server loads mantis index to memory and starts to accept queries (port 23901 is used by default) in the following format:
-
-```
-<query_filepath> <output_filepath>
-```
-
- The query has the following arguments: 
- - query filepath: input transcripts to be queried.
- - output filepath: the file where the query results should be written. The output file in contains the list of experiments (i.e., hits) corresponding to each queried transcript.
+ The server loads mantis index to memory and starts to accept queries (port 23901 is used by default), each line containing sequence of nucleotides is a separate query. The server responds back to client with strings containing information about query k-mers presence in samples. 
 
  There is a client example written in python `src/client.py` which demonstrates how one can communicate with the server. 
 

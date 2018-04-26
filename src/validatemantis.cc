@@ -116,7 +116,8 @@ validate_main ( ValidateOpts& opt )
 	PRINT_CDBG("Reading query kmers from disk.");
 	uint32_t seed = 2038074743;
   uint64_t num_kmers = 0;
-  mantis::QuerySets multi_kmers = Kmer::parse_kmers(opt.query_file.c_str(),
+  std::ifstream ipfile(opt.query_file);
+  mantis::QuerySets multi_kmers = Kmer::parse_kmers(ipfile,
                                                     seed,
                                                     cdbg.range(),
 																										kmer_size,

@@ -16,7 +16,6 @@
  * ============================================================================
  */
 
-
 #include <iostream>
 #include <fstream>
 #include <utility>
@@ -57,58 +56,47 @@
 
 #define MAX_NUM_SAMPLES 2600
 #define OUTPUT_FILE "samples.output"
+#define PORT 23901
 
-void output_results(mantis::QuerySets& multi_kmers,   ColoredDbg<SampleObject<CQF<KeyObject>*>, KeyObject>& cdbg,
-                    std::ofstream& opfile) {
-  mantis::QueryResults qres;
+void output_results(mantis::QuerySets& multi_kmers, 
+                    ColoredDbg<SampleObject<CQF<KeyObject>*>, KeyObject>& cdbg,
+                    std::ostream& out) {
   uint32_t cnt= 0;
-  {
-    CLI::AutoTimer timer{"Query time ", CLI::Timer::Big};
-    //size_t qctr{0};
-    //size_t nquery{multi_kmers.size()};
-    for (auto& kmers : multi_kmers) {
-      //std::sort(kmers.begin(), kmers.end());
-      opfile <<  cnt++ << '\t' << kmers.size() << '\n';
-      mantis::QueryResult result = cdbg.find_samples(kmers);
-      for (auto it = result.begin(); it != result.end(); ++it) {
-        opfile << cdbg.get_sample(it->first) << '\t' << it->second << '\n';
-      }
-      //++qctr;
+  CLI::AutoTimer timer{"Query time ", CLI::Timer::Big};
+  for (auto& kmers : multi_kmers) {
+    out <<  cnt++ << '\t' << kmers.size() << '\n';
+    mantis::QueryResult result = cdbg.find_samples(kmers);
+    for (auto it = result.begin(); it != result.end(); ++it) {
+      out << cdbg.get_sample(it->first) << '\t' << it->second << '\n';
     }
   }
 }
 
-
-void output_results_json(mantis::QuerySets& multi_kmers,  ColoredDbg<SampleObject<CQF<KeyObject>*>, KeyObject>& cdbg,
-                    std::ofstream& opfile) {
-  mantis::QueryResults qres;
+void output_results_json(mantis::QuerySets& multi_kmers, ColoredDbg<SampleObject<CQF<KeyObject>*>, KeyObject>& cdbg,
+                         std::ostream& out) {
   uint32_t cnt= 0;
-  {
-    CLI::AutoTimer timer{"Query time ", CLI::Timer::Big};
-    opfile << "[\n";
-    size_t qctr{0};
-    size_t nquery{multi_kmers.size()};
-    for (auto& kmers : multi_kmers) {
-      //std::sort(kmers.begin(), kmers.end());
-      opfile << "{ \"qnum\": " << cnt++ << ",  \"num_kmers\": " << kmers.size() << ", \"res\": {\n";
-      mantis::QueryResult result = cdbg.find_samples(kmers);
-      for (auto it = result.begin(); it != result.end(); ++it) {
-        opfile << " \"" <<cdbg.get_sample(it->first) << "\": " << it->second ;
-        if (std::next(it) != result.end()) {
-          opfile << ",\n";
-        }
+  CLI::AutoTimer timer{"Query time ", CLI::Timer::Big};
+  out << "[\n";
+  size_t qctr{0};
+  size_t nquery{multi_kmers.size()};
+  for (auto& kmers : multi_kmers) {
+    out << "{ \"qnum\": " << cnt++ << ",  \"num_kmers\": " << kmers.size() << ", \"res\": {\n";
+    mantis::QueryResult result = cdbg.find_samples(kmers);
+    for (auto it = result.begin(); it != result.end(); ++it) {
+      out << " \"" <<cdbg.get_sample(it->first) << "\": " << it->second ;
+      if (std::next(it) != result.end()) {
+        out << ",\n";
       }
-      opfile << "}}";
-      if (qctr < nquery - 1) { opfile << ","; }
-      opfile << "\n";
-      ++qctr;
     }
-    opfile << "]\n";
+    out << "}}";
+    if (qctr < nquery - 1) { out << ","; }
+    out << "\n";
+    ++qctr;
   }
-
+  out << "]\n";
 }
 
-void run_query(std::string query_file, std::string output_file, 
+void run_query(std::istream& input, std::ostream& output, 
                ColoredDbg<SampleObject<CQF<KeyObject>*>, KeyObject>& cdbg, 
                spdlog::logger * console, 
                bool use_json) {
@@ -119,27 +107,19 @@ void run_query(std::string query_file, std::string output_file,
   console->info("Use colored dbg with {} k-mers and {} color classes",
                 cdbg.get_cqf()->size(), cdbg.get_num_bitvectors());
   console->info("K-mer size: {}", kmer_size);
-  console->info("Query file: {}", query_file);
-  console->info("Output file: {}", output_file);
 
-  mantis::QuerySets multi_kmers = Kmer::parse_kmers(query_file.c_str(),
+  mantis::QuerySets multi_kmers = Kmer::parse_kmers(input,
                                                     seed,
                                                     cdbg.range(),
                                                     kmer_size,
                                                     total_kmers);
   console->info("Total k-mers to query: {}", total_kmers);
-
-  std::ofstream opfile(output_file);
   console->info("Querying the colored dbg.");
-
   if (use_json) {
-    output_results_json(multi_kmers, cdbg, opfile);
+    output_results_json(multi_kmers, cdbg, output);
   } else {
-    output_results(multi_kmers, cdbg, opfile);
+    output_results(multi_kmers, cdbg, output);
   }
-
-  opfile.close();
-  console->info("Writing done.");
 }
 
 
@@ -171,10 +151,15 @@ int query_main(QueryOpts& opt)
   ColoredDbg<SampleObject<CQF<KeyObject>*>, KeyObject> cdbg(cqf_file,
                                                             eqclass_files,
                                                             sample_file);
-  run_query(query_file, output_file, cdbg, console, use_json); 
+  console->info("Query file: {}", query_file);
+  console->info("Output file: {}", output_file);
+  std::ifstream ipfile(query_file);
+  std::ofstream opfile(output_file);
+  run_query(ipfile, opfile, cdbg, console, use_json); 
+  console->info("Writing done.");
 
   return EXIT_SUCCESS;
-}       /* ----------  end of function main  ---------- */
+}
 
 
 /* 
@@ -206,9 +191,8 @@ int server_main(QueryOpts& opt)
                                                               sample_file);
 
     boost::asio::io_service io_service;
-    server s(io_service, 23901, cdbg, console, use_json);
+    server s(io_service, PORT, cdbg, console, use_json);
 
-    console->info("Reading query kmers from disk.");
     console->info("Run server accepting queries.");
     io_service.run();
 
@@ -230,5 +214,5 @@ int server_main(QueryOpts& opt)
   }
 
   return EXIT_SUCCESS;
-}       /* ----------  end of function main  ---------- */
+}
 

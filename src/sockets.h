@@ -6,7 +6,7 @@
 
 using boost::asio::ip::tcp;
 
-extern void run_query(std::string query_file, std::string output_file, 
+void run_query(std::istream& input, std::ostream& output, 
                ColoredDbg<SampleObject<CQF<KeyObject>*>, KeyObject>& cdbg, 
                spdlog::logger * console, 
                bool use_json); 
@@ -32,35 +32,31 @@ public:
 private:
   void do_read()
   {
-    // read query file path and output file path
+    // read query string
     auto self(shared_from_this());
+    memset(data_, 0, sizeof(data_)); 
     socket_.async_read_some(boost::asio::buffer(data_, max_length),
         [this, self](boost::system::error_code ec, std::size_t length)
         {
-          char * delimeter_ptr = strstr(data_, " "); 
-          if (!delimeter_ptr) 
-          {
-            // TODO incorrect query format error. Call do_read?
-            return; 
-          }
-          std::string query_filepath(data_, delimeter_ptr - data_);
-          std::string output_filepath(delimeter_ptr + 1);  // assume exactly one space between filepaths
-
-          run_query(query_filepath, output_filepath, cdbg, console, use_json); // TODO check result
+          if (!strlen(data_)) return; 
+          console->info("Got query: {}", data_);
+          std::istringstream input(data_); 
+          std::ostringstream output; 
+          run_query(input, output, cdbg, console, use_json); 
 
           if (!ec)
           {
-            do_write(length, output_filepath);
+            do_write(length, output.str());
           }
         });
   }
 
-  void do_write(std::size_t length, std::string outfile)
+  void do_write(std::size_t length, std::string result)
   {
-    // respond with output filepath 
+    // respond with query output
     auto self(shared_from_this());
     memset(data_, 0, sizeof(data_)); 
-    strcpy(data_, outfile.c_str()); 
+    strcpy(data_, result.c_str());  
     boost::asio::async_write(socket_, boost::asio::buffer(data_, length),
         [this, self](boost::system::error_code ec, std::size_t /*length*/)
         {
@@ -72,7 +68,7 @@ private:
   }
 
   tcp::socket socket_;
-  enum { max_length = 4096 };
+  enum { max_length = 4096 };  // TODO handle bigger query and result
   char data_[max_length];
 
   ColoredDbg<SampleObject<CQF<KeyObject>*>, KeyObject>& cdbg;

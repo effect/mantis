@@ -139,14 +139,13 @@ inline static unsigned __int128 Kmer::word_reverse_complement(unsigned __int128 
 }
 #endif
 
-mantis::QuerySets Kmer::parse_kmers(const char *filename, uint32_t seed,
+mantis::QuerySets Kmer::parse_kmers(std::istream& input, uint32_t seed,
 																		uint64_t range, uint64_t kmer_size,
 																		uint64_t& total_kmers) {
   mantis::QuerySets multi_kmers;
 	total_kmers = 0;
-	std::ifstream ipfile(filename);
 	std::string read;
-	while (ipfile >> read) {
+	while (input >> read) {
     mantis::QuerySet kmers_set;
 
 		if (read.length() < kmer_size)

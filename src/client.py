@@ -7,11 +7,18 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 s.connect((HOST, PORT))
 
-query_filepath = "/home/paf2023/run_mantis/queries/query{0}.fa"
-output_filepath = "/home/paf2023/run_mantis/out/out{0}.res"
+QUERIES = [
+  "CGACCCCATGGACTGCAGCCACCAGGCTCCTCCATCCATGGGGTCGCTAAGAGTTGGACACGACTGAGAGACTTCACTTTCACTTTCCACTTTCATGCATT", 
+  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 
+  "CGACCCCATGGACTGCAGCCACCAGGCTCCTCCATCCATGGGGTCGCTAAGAGTTGGACACGACTGAGAGACTTCACTTTCACTTTCCACTTTCATGCATTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 
+  "CGACCCCATGGACTGCAGCCACCAGGCTCCTCCATCCATGGGGTCGCTAAGAGTTGGACACGACTGAGAGACTTCACTTTCACTTTCCACTTTCATGCATT\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"]
 
-for x in range(0, 5):
-    print("Send request {0}".format(query_filepath.format(x)))
-    s.send(query_filepath.format(x) + " " + output_filepath.format(x))
+for index, query in enumerate(QUERIES):
+    print("Send request {0}:".format(index))
+    print(query)
+
+    s.send(query)
     result = str(s.recv(4096))
-    print("Got result {0}".format(result))
+    
+    print("Got result:")
+    print(result)

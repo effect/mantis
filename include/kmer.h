@@ -43,7 +43,7 @@ class Kmer {
 		static inline unsigned __int128 word_reverse_complement(unsigned __int128 w);
 		static inline int64_t word_reverse_complement(uint64_t w);
 		static inline uint32_t word_reverse_complement(uint32_t w);
-		static mantis::QuerySets parse_kmers(const char *filename,
+		static mantis::QuerySets parse_kmers(std::istream& input,
 																				 uint32_t seed, uint64_t range,
 																				 uint64_t kmer_size, uint64_t&
 																				 total_kmers);
